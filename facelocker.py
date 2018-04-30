@@ -1,6 +1,4 @@
 # !/usr/bin/python3
-import logging
-import os
 import platform
 import subprocess
 import time
