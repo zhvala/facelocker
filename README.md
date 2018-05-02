@@ -5,6 +5,7 @@
 ## 使用方式
 
 ```bash
+# maybe different on Windows
 git clone https://github.com/zhvala/facelocker.git
 cd facelocker
 pip3 install -r requirements.txt
@@ -13,11 +14,11 @@ nohup python3 facelocker.py &
 
 ## 支持平台
 
-| 操作系统       | 是否支持           |
-| ---------- | -------------- |
-| Windows 10 | 支持             |
-| OS X       | 支持             |
-| Linux      | 目前仅支持`dde`桌面环境 |
+| 操作系统   | 是否支持                     |
+| ---------- | ---------------------------- |
+| Windows 10 | 支持                         |
+| OS X       | 支持                         |
+| Linux      | 仅测试了Ubuntu gnome桌面环境 |
 
 ## To do
 

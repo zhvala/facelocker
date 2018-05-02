@@ -1,53 +1,70 @@
 # !/usr/bin/python3
+import logging
 import platform
 import subprocess
 import time
 
 import cv2
 import face_recognition
+import Quartz
 
+''' ============================ Config ================================= '''
 # Cross-platform
 MAC_LOCK_CMD = r"/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession \
  -suspend"
-LINUX_LOCK_CMD = r"dde-lock > /dev/null 2>&1"
-
+UBUNTU_LOCK_CMD = r"gnome-screensaver-command --lock"
 WIN_LOCK_CMD = r"rundll32.exe user32.dll,LockWorkStation"
 
 # Config
 TMP_PIC_FILE = r"face.png"
+CAPTURE_NUM = 10
+CAPTURE_INTVAL = 5
+
+''' ==================================================================== '''
 
 
 def run_facelocker(lock_func):
     while True:
-        # if True:
-        if not capture_face():
+        if not inLock() and not capture_face():
             lock_func()
-        time.sleep(5)
+        time.sleep(CAPTURE_INTVAL)
 
 
-# capture face
+def inLock():
+    current = Quartz.CGSessionCopyCurrentDictionary()
+    if current:
+        if current.get("CGSSessionScreenIsLocked", 0) == 1 or \
+                current.get("kCGSSessionOnConsoleKey", 1) == 0:
+            return True
+    return False
+
+
 def capture_face():
     face = False
     camera = cv2.VideoCapture(0)
-    for i in range(10):
-        ret, image = camera.read()
-        if ret is None:
-            return False
-        cv2.imwrite(TMP_PIC_FILE, image)
-        image = face_recognition.load_image_file(TMP_PIC_FILE)
-        face_locations = face_recognition.face_locations(image)
-        if face_locations:
-            face = True
-            break
-        time.sleep(0.1)
-    del camera
+    try:
+        for i in range(CAPTURE_NUM):
+            ret, image = camera.read()
+            if ret is None:
+                return False
+            cv2.imwrite(TMP_PIC_FILE, image)
+            image = face_recognition.load_image_file(TMP_PIC_FILE)
+            face_locations = face_recognition.face_locations(image)
+            if face_locations:
+                face = True
+                break
+            time.sleep(0.1)
+    except Exception as err:
+        print("Capture image exception: ", err)
+    finally:
+        del camera
     return face
 
 # get linux lock
 
 
 def linux_lockcmd():
-    return LINUX_LOCK_CMD
+    return UBUNTU_LOCK_CMD
 
 # get lock
 
