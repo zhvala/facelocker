@@ -12,8 +12,8 @@ opencv-python==3.4.0.12
 Pillow==5.1.0
 pycodestyle==2.4.0
 pylint==1.8.4
-pyobjc-core==4.2.1
-pyobjc-framework-Cocoa==4.2.1
-pyobjc-framework-Quartz==4.2.1
 six==1.11.0
 wrapt==1.10.11
+pyobjc-core==4.2.1; sys_platform == 'darwin'
+pyobjc-framework-Cocoa==4.2.1; sys_platform == 'darwin'
+pyobjc-framework-Quartz==4.2.1; sys_platform == 'darwin'

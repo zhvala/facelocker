@@ -1,59 +1,63 @@
-# !/usr/bin/python3
-import logging
+#!/usr/bin/python3
+import getopt
 import platform
 import subprocess
 import time
 
 import cv2
 import face_recognition
-import Quartz
 
-''' ============================ Config ================================= '''
+''' ==================================================================== '''
 # Cross-platform
-MAC_LOCK_CMD = r"/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession \
- -suspend"
 UBUNTU_LOCK_CMD = r"gnome-screensaver-command --lock"
 WIN_LOCK_CMD = r"rundll32.exe user32.dll,LockWorkStation"
+MAC_LOCK_CMD = r"/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession \
+ -suspend"
 
 # Config
 TMP_PIC_FILE = r"face.png"
 CAPTURE_NUM = 10
 CAPTURE_INTVAL = 5
+CAMERA_READ_INTVAL = 0.1
 
 ''' ==================================================================== '''
 
 
-def run_facelocker(lock_func):
+def Info(err):
+    print("face locker error: ", err)
+
+
+def Error(err):
+    print("face locker error: ", err)
+
+
+def Fatal(err):
+    print("face locker fatal: ", err)
+    exit(1)
+
+
+def RunFaceLocker(lock_func):
     while True:
-        if not inLock() and not capture_face():
+        if not False and not CaptureFace():
             lock_func()
         time.sleep(CAPTURE_INTVAL)
 
 
-def inLock():
-    current = Quartz.CGSessionCopyCurrentDictionary()
-    if current:
-        if current.get("CGSSessionScreenIsLocked", 0) == 1 or \
-                current.get("kCGSSessionOnConsoleKey", 1) == 0:
-            return True
-    return False
-
-
-def capture_face():
+def CaptureFace():
     face = False
     camera = cv2.VideoCapture(0)
     try:
         for i in range(CAPTURE_NUM):
             ret, image = camera.read()
-            if ret is None:
+            if not ret:
                 return False
             cv2.imwrite(TMP_PIC_FILE, image)
             image = face_recognition.load_image_file(TMP_PIC_FILE)
-            face_locations = face_recognition.face_locations(image)
-            if face_locations:
+            locations = face_recognition.face_locations(image)
+            if locations:
                 face = True
                 break
-            time.sleep(0.1)
+            time.sleep(CAMERA_READ_INTVAL)
     except Exception as err:
         print("Capture image exception: ", err)
     finally:
@@ -69,23 +73,36 @@ def linux_lockcmd():
 # get lock
 
 
-def get_lock():
-    lock_cmd = ""
+def GetLockFunc():
+    cmd = ""
     sys = platform.system()
     if sys == "Windows":
-        lock_cmd = WIN_LOCK_CMD
+        cmd = WIN_LOCK_CMD
     elif sys == "Darwin":
-        lock_cmd = MAC_LOCK_CMD
+        cmd = MAC_LOCK_CMD
     elif sys == "Linux":
-        lock_cmd = linux_lockcmd()
+        cmd = linux_lockcmd()
     else:
-        print("Unknown system")
-        exit(1)
+        Fatal("unknown system")
 
-    def lock_func():
-        subprocess.call(lock_cmd, shell=True)
-    return lock_func
+    def LockFunc():
+        subprocess.call(cmd, shell=True)
+    return LockFunc
+
+
+def GetCheckFunc():
+    def DarwinFunc():
+        try:
+            import Quartz
+            status = Quartz.CGSessionCopyCurrentDictionary()
+            if status:
+                if status.get("CGSSessionScreenIsLocked", 0) == 1 or \
+                        status.get("kCGSSessionOnConsoleKey", 1) == 0:
+                    return True
+            return False
+        except ImportError as err:
+            print("")
 
 
 if __name__ == "__main__":
-    run_facelocker(get_lock())
+    RunFaceLocker(GetLockFunc())
