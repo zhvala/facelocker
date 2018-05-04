@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-import getopt
 import platform
 import subprocess
+import sys
 import time
 
 import cv2
@@ -10,7 +10,7 @@ import face_recognition
 ''' ==================================================================== '''
 # Cross-platform
 UBUNTU_LOCK_CMD = r"gnome-screensaver-command --lock"
-WIN_LOCK_CMD = r"rundll32.exe user32.dll,LockWorkStation"
+UBUNTU_CHECK_CMD = r"gnome-screensaver-command -q"
 MAC_LOCK_CMD = r"/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession \
  -suspend"
 
@@ -23,23 +23,19 @@ CAMERA_READ_INTVAL = 0.1
 ''' ==================================================================== '''
 
 
-def Info(err):
-    print("face locker error: ", err)
+def Error(info):
+    print(info, file=sys.stderr)
 
 
-def Error(err):
-    print("face locker error: ", err)
-
-
-def Fatal(err):
-    print("face locker fatal: ", err)
+def Fatal(info):
+    Error(info)
     exit(1)
 
 
-def RunFaceLocker(lock_func):
+def RunFaceLocker(lock, check):
     while True:
-        if not False and not CaptureFace():
-            lock_func()
+        if not check() and not CaptureFace():
+            lock()
         time.sleep(CAPTURE_INTVAL)
 
 
@@ -59,40 +55,20 @@ def CaptureFace():
                 break
             time.sleep(CAMERA_READ_INTVAL)
     except Exception as err:
-        print("Capture image exception: ", err)
+        Error("Capture image exception: %s" % err)
     finally:
         del camera
     return face
 
-# get linux lock
 
-
-def linux_lockcmd():
-    return UBUNTU_LOCK_CMD
-
-# get lock
-
-
-def GetLockFunc():
+def GetPlatformFunc():
     cmd = ""
-    sys = platform.system()
-    if sys == "Windows":
-        cmd = WIN_LOCK_CMD
-    elif sys == "Darwin":
+    check = None
+    system = platform.system()
+    if system == "Darwin":
         cmd = MAC_LOCK_CMD
-    elif sys == "Linux":
-        cmd = linux_lockcmd()
-    else:
-        Fatal("unknown system")
 
-    def LockFunc():
-        subprocess.call(cmd, shell=True)
-    return LockFunc
-
-
-def GetCheckFunc():
-    def DarwinFunc():
-        try:
+        def checkDarwin():
             import Quartz
             status = Quartz.CGSessionCopyCurrentDictionary()
             if status:
@@ -100,9 +76,26 @@ def GetCheckFunc():
                         status.get("kCGSSessionOnConsoleKey", 1) == 0:
                     return True
             return False
-        except ImportError as err:
-            print("")
+
+        check = checkDarwin
+    elif system == "Linux":
+        cmd = UBUNTU_LOCK_CMD
+
+        def checkLinux():
+            return subprocess.getoutput(UBUNTU_CHECK_CMD).split()[-1] == "active"
+
+        check = checkLinux
+    elif system == "Windows":
+        Fatal("windows not support yet")
+    else:
+        Fatal("unknown system")
+        exit(1)
+
+    def lock():
+        return subprocess.call(cmd, shell=True)
+    return lock, check
 
 
 if __name__ == "__main__":
-    RunFaceLocker(GetLockFunc())
+    lock, check = GetPlatformFunc()
+    RunFaceLocker(lock, check)
