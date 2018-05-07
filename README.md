@@ -5,22 +5,16 @@
 ## 使用方式
 
 ```bash
-# maybe different on Windows
+# maybe different
 git clone https://github.com/zhvala/facelocker.git
 cd facelocker
-pip3 install -r requirements.txt
-nohup python3 facelocker.py &
+chmod +x run_facelocker.sh
+sh run_facelocker.sh
 ```
 
 ## 支持平台
 
-| 操作系统   | 是否支持                     |
-| ---------- | ---------------------------- |
-| Windows 10 | 支持                         |
-| OS X       | 支持                         |
-| Linux      | 仅测试了Ubuntu gnome桌面环境 |
-
-## To do
-
-- 更多的Linux 桌面环境支持
-- 二进制打包
+| 操作系统 | 是否支持 |
+| -------- | -------- |
+| Mac OS X | 支持     |
+| Linux    | 支持dibian系     |
